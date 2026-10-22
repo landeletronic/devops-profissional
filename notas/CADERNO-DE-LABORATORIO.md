@@ -1559,6 +1559,174 @@ organizadas, sem nenhum segredo, atribuição declarada.
 
 ---
 
+## Simulado M0 — questões e correções
+
+- **Data:** 2026-10-22
+- **Método:** *recolha ativa* — recuperar da memória em vez de reler. É o método
+  de estudo mais eficiente disponível, e o mais desconfortável.
+- **Resultado:** Q6 quase completa · Q2 e Q3 parciais · **Q1, Q4 e Q5 erradas**
+- **Padrão identificado:** responder por **intuição geral** em vez do
+  **mecanismo específico**, e entregar **menos itens do que a pergunta pede**.
+  As três falhas falharam do mesmo jeito: a resposta *soa plausível*, mas não é
+  a que foi perguntada.
+
+> **Nota de método sobre a nota:** errar num simulado é o cenário **barato**.
+> O mesmo erro num incidente real custa muito mais. Por isso se treina assim.
+
+### Q1 — Arquitetura e `localhost`
+
+**Pergunta:** quem edita, quem executa, e por que `localhost:8000` não funciona
+a partir do Windows?
+
+**Resposta dada:** o Windows não tem o projeto; acesso *"via wsl2/kind"* e
+*"via vm instalada em um proxmox"*.
+
+**Avaliação:** 🔴 — acertou que o Windows não hospeda o projeto, mas cometeu os
+**dois erros de escopo do ambiente** e não respondeu o que foi perguntado.
+
+- ❌ **WSL2** — não existe aqui (Regra 2b). É justamente o comentário que foi
+  removido do `docker-compose.override.yml` no mesmo dia.
+- ❌ **Proxmox** — fora de escopo (Regra 2). `192.168.15.221:8006` é
+  explicitamente excluído.
+- ❌ Não respondeu **por que `localhost` falha**.
+
+**Correção:**
+
+| | |
+|---|---|
+| Quem edita | **Windows** — editor, Git, agente |
+| Quem executa | **`pve-lab` (192.168.15.10)**, via SSH |
+| Por que `localhost:8000` falha | do Windows, `localhost` **é o próprio Windows** — e lá nada roda. O processo está no `pve-lab`. Por isso: `http://192.168.15.10:8000`. |
+
+> **Lição:** valeu a regra do glossário, Bloco 1 — *li antes de agir*. Saber
+> **qual máquina** é a pergunta prévia a qualquer comando.
+
+### Q2 — `ca-certificates`
+
+**Resposta dada:** *"leitura dos certificados dos sites... para visualizar ou
+baixar algum arquivo."*
+
+**Avaliação:** 🟡 — campo certo, mecanismo errado.
+
+**Correção:** o pacote instala o **bundle de CAs confiáveis** — a lista de
+autoridades emitentes em quem o sistema **confia**. Sem ele o TLS **não é
+validável**: nada confirma que o servidor é quem diz ser. **Não é sobre
+visualizar nem baixar.**
+
+O que quebraria concretamente:
+
+```
+apt-get update          em repo HTTPS  ->  recusa
+curl https://...                          ->  SSL certificate problem: unable to get local issuer certificate
+git clone https://github.com/...          ->  falha
+```
+
+**A pista está no nome:** `ca` = **Certificate Authority**, não "certificado".
+Foi o primeiro pacote instalado (Passo 1) porque **sem ele nenhum dos outros
+passos teria conseguido baixar nada por HTTPS.**
+
+### Q3 — Por que Node 24
+
+**Pedida:** três razões. **Entregue:** uma (a certa).
+
+**Avaliação:** 🟡 — a que deu é **a** evidência:
+
+```dockerfile
+./kube-news/src/Dockerfile:1:     FROM node:24-alpine
+./kube-news/src/Dockerfile.dev:1: FROM node:24-alpine
+```
+
+**As outras duas que faltaram:**
+
+1. **`npx`** — o MCP server sobe com `npx -y mcp-server-kubernetes`. O `npx`
+   vem do `npm`, que vem do pacote `nodejs` completo (o do Debian não trazia —
+   foi a etapa 5 da cascata do Err01).
+2. **Consistência declarada** — o repositório `node_24.x` foi escolhido **para
+   bater** com o que o projeto declara. Usar 18 ou 20 seria decidir **por fora**
+   do projeto.
+
+> **Lição:** *"pediu 3, dei 1"* é entregar **um terço**. Em entrevista isso
+> reprova mais do que não saber.
+
+### Q4 — `live-restore: true` ⚠️ erro conceitual
+
+**Resposta dada:** *"quando o container atualiza/reboot/crash ele retorna ao
+estado normal sem perder os dados."*
+
+**Avaliação:** 🔴 — descreveu **persistência de dados**, que não tem relação
+com a directiva.
+
+**Correção:**
+
+| | |
+|---|---|
+| **`live-restore`** | quando o **daemon do Docker** reinicia ou é atualizado (`systemctl restart docker`, `apt upgrade docker-ce`), os containers **continuam rodando** em vez de morrerem |
+| **Volume** | é isso que preserva dados entre containers/recriação |
+
+**A situação que salva:** atualizar o Docker por segurança no meio do dia.
+Sem `live-restore` → **todos os containers caem** (Postgres, app, pgAdmin).
+Com ele → ficam de pé. Por isso a directiva fica no **`daemon.json`** (do
+daemon), não no container.
+
+> **Lição:** são dois conceitos de sobrevivência diferentes —
+> **sobreviver a restart do daemon** ≠ **sobreviver a recriação do container**.
+
+### Q5 — Cluster × Contexto ⚠️ erro conceitual
+
+**Pergunta:** diferença entre cluster `aiops` e contexto `kind-aiops`.
+
+**Resposta dada:** falou do problema de **ter dois clusters** rodando (que foi o
+erro do Passo 5a). Isso é **outra coisa**.
+
+**Avaliação:** 🔴 — a pergunta central não apareceu.
+
+**Correção:**
+
+| | O que é |
+|---|---|
+| **Cluster `aiops`** | o **lado servidor**: os containers `kind` — nós, API server, pods. Existe ou não existe. |
+| **Contexto `kind-aiops`** | uma **configuração local do `kubectl`**: endereço do servidor, credencial, namespace padrão. É um **ponteiro/perfil**. |
+
+- Um cluster pode ter **vários** contextos apontando para ele.
+- Um contexto pode apontar para **outro** cluster.
+- `kubectl config current-context` mostra **qual ponteiro está ativo**.
+
+**O perigo do contexto errado:** o `kubectl` conversa com **outra máquina** e
+**não avisa**. Você aplica um manifesto, nada acontece, e a pergunta vira *"por
+que não funcionou?"* — quando funcionou, **noutro lugar**. É o problema de
+**contexto** do glossário, Bloco 4, e a causa provável de muitos bugs de
+automação.
+
+### Q6 — Dois `python3` ✅
+
+**Resposta dada:** *"pode existir dois python. um deles estava nas dependências
+do nodejs."*
+
+**Avaliação:** ✅ — acertou a origem, e ela foi comprovada:
+
+```
+$ apt-cache depends nodejs
+  Depends: python3
+```
+
+**Faltou identificar qual foi usado:** o do sistema, `/usr/bin/python3`
+(**3.13.5**) — `Using CPython 3.13.5 interpreter at: /usr/bin/python3`.
+
+> **Observação bonita:** **duas decisões que pareciam separadas se encontraram** —
+> o Python instalado *por causa* do Node foi o que o `uv` usou *depois*. É o
+> tipo de efeito colateral que só aparece se você ler as saídas.
+
+### Recado final do simulado
+
+As perguntas que falharam falharam por **não serem respondidas**, não por
+falta de conteúdo na cabeça. Q4 e Q5 exigiam **definir**, e você
+**narrou** — e narrar é o que dá a *impressão* de resposta.
+
+**Para a próxima:** antes de responder, reescrever mentalmente **o que exatamente
+estão perguntando**. Metade do erro some aí.
+
+---
+
 ## Nota de método
 
 O caderno é atualizado **após cada passo concluído**, e não em tempo real.
@@ -1567,7 +1735,8 @@ registra-se **o que se concluiu**, com veredito, não o que está em curso.
 
 ---
 
-*Última atualização: 2026-10-22 — **M0 concluído (14/14)** e **Passo 6 —
-repositório `landeletronic/devops-profissional` publicado.** Pendências do M0
-resolvidas: comentário WSL2 corrigido, destino do `git push` criado.
+*Última atualização: 2026-10-22 — **M0 concluído (14/14)** · **Passo 6 —
+repositório `landeletronic/devops-profissional` publicado** · **Simulado M0
+aplicado e corrigido** (acertos parciais em Q2/Q3/Q6; erros conceituais
+registrados em Q4 `live-restore` e Q5 cluster×contexto; erros de escopo em Q1).
 Nenhuma credencial publicada (auditoria 9/9).*
