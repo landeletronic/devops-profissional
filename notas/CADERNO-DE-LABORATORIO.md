@@ -1385,14 +1385,189 @@ cd ~/projetos/imersao-aiops-prod-01
 
 ---
 
-## Pendência aberta (requer decisão)
+## Pendências do M0 — RESOLVIDAS
 
-| Item | Situação | Precisa de |
+| Item | Situação | Resolução |
 |---|---|---|
-| `docker-compose.override.yml` | comentário menciona WSL2, que não existe mais no ambiente (o `pve-lab` é uma VM). O conteúdo da directiva está correto. | sua decisão: atualizar o comentário ou deixar como está |
-| Push para o GitHub | `origin` = `KubeDev/imersao-aiops-prod-01` (upstream), `credential.helper = NONE` | um fork ou repositório `landeletronic/*` — **assunto do M2** |
+| `docker-compose.override.yml` | comentário mencionava WSL2, que não existe mais no ambiente (o `pve-lab` é uma VM) | **[OK]** comentário corrigido em 2026-10-22; directiva validada, `unless-stopped` intacta |
+| Push para o GitHub | `origin` apontava para o repositório **upstream** (`KubeDev/imersao-aiops-prod-01`) — de outra pessoa | **[OK]** repositório próprio criado: `landeletronic/devops-profissional` |
 
 ---
 
-*Última atualização: 2026-10-22 — **M0 concluído: 14 de 14 passos.** Laboratório
-completo, Regra 1 respeitada, duas armadilhas registradas no caderno.*
+## Passo 6 — repositório próprio no GitHub
+
+- **Data:** 2026-10-22
+- **Objetivo:** dar destino ao trabalho, que até então vivia **só** na VM.
+- **Resultado:** <https://github.com/landeletronic/devops-profissional> — **PÚBLICO**, 252 arquivos, 6,68 MB.
+
+### Por que este passo era necessário
+
+O `origin` do `pve-lab` apontava para `https://github.com/KubeDev/imersao-aiops-prod-01.git`
+— **o repositório de outra pessoa**, com `credential.helper = NONE`. Não havia
+para onde dar `git push`. Enquanto isso, todo o trabalho (glossário, plano,
+caderno, o ambiente montado) existia **em uma única VM**. Perder a VM seria
+perder tudo.
+
+### Decisão de autoria — a mais importante
+
+O repositório da imersão **não possui arquivo de licença**. Na ausência de
+licença, por padrão legal é *todos os direitos reservados* — **não** é "livre
+para usar". E o que lá estava era substancial: o `boilerplate` inteiro, PRDs,
+specs do `openspec`, o app `kube-news`, os manifests de falha e os **slides das
+aulas**.
+
+**Decisão registrada:** incluir o material da KubeDev **com atribuição
+explícita**, num [`CREDITS.md`](https://github.com/landeletronic/devops-profissional/blob/main/CREDITS.md)
+com a origem, o link do repositório original e a nota de ausência de licença.
+Separou-se o que é autorial (glossário, plano, caderno, override) do que é de
+terceiros — e essa separação está **dita, não implícita**.
+
+> **Lição de carreira:** atribuir a origem do que se usa **não enfraquece** um
+> portfólio — demonstra exatamente o que um profissional sênior faz: saber de
+> onde veio o que se usa, e declarar isso. O contrário é o que envergonha.
+
+### Auditoria de segurança — 9 verificações, antes de publicar
+
+Repositório **público** exige isto. Todas precisavam passar:
+
+| # | Verificação | Resultado |
+|---|---|---|
+| 1 | nenhum `.env` (só `.env.example`) | ✅ |
+| 2 | nenhum diretório de build (`.venv`, `__pycache__`, `node_modules`) | ✅ |
+| 3 | nenhum `.pyc` | ✅ |
+| 4 | nenhuma chave Anthropic real (dois padrões de busca) | ✅ |
+| 5 | nenhuma credencial AWS (`AKIA…`) | ✅ |
+| 6 | nenhum token GitHub (`ghp_…`, `github_pat_…`) | ✅ |
+| 7 | nenhuma chave SSH / `.pem` / `.key` | ✅ |
+| 8 | nenhum `.env` fora de `.example` | ✅ |
+| 9 | `.env.example` **preservado** | ✅ |
+
+**Duas falhas reais foram pegas pela auditoria** — e é isto que justifica rodá-la:
+
+1. **`--exclude` do `tar` não pegou os `__pycache__` aninhados.**
+   O padrão `boilerplate-k8s-aiops/__pycache__` só casa o nível **raiz**. Os 8
+   diretórios dentro de `src/` e `alembic/` passaram. Corrigido com `find … -name '__pycache__' -exec rm -rf {} +`,
+   que é recursivo por natureza. *Lição:* **exclusão por caminho exato não é
+   recursiva.***
+
+2. **O Windows não extraiu os diretórios `.claude/`** do `kube-news`
+   (`Can't create ... Invalid argument`). Na prática não foi perda: o
+   `.gitignore` deste repositório **já exclui** `.claude/` e `.codex/` por
+   política. Resolvido com uma verificação por **comparação de listas de
+   arquivos** — aí sim dá para afirmar *"nada faltando"* com evidência.
+
+### Verificação por comparação de listas (o método que vale guardar)
+
+Em vez de olhar e achar que está tudo certo, comparou-se a **lista esperada**
+(existente na VM) com a **lista real** (extraída no Windows):
+
+```
+esperado (sem .claude/.codex): 248
+real                          : 251
+[ok] nada faltando - todos os arquivos esperados estao presentes
+SOBRANDO: + .gitignore  + CREDITS.md  + README.md     (os 3, meus)
+```
+
+Os 251 = 248 esperados + 3 que eu criei. **Nada faltando, nada sobrando.**
+É o mesmo princípio do *drift* do glossário, Bloco 9: comparar o **estado
+desejado** contra o **estado real**, e não confiar na memória.
+
+### `.gitattributes` — por que foi necessário
+
+O Git avisou, em ~200 linhas:
+
+```
+warning: in the working copy of 'scripts/aiops-lab.sh', LF will be replaced by CRLF the next time Git touches it
+```
+
+No Windows o Git converte `LF` → `CRLF` por padrão. Para arquivos de texto
+é inofensivo — **para `.sh` é fatal**: o `bash` lê `\r` como parte do comando e
+recusa o script no Linux. A correção foi um `.gitattributes` com
+`* text=auto eol=lf` e `*.sh text eol=lf`. **Depois disso, zero avisos.**
+
+> *Lição:* repositório que roda em duas plataformas precisa fixar o fim de
+> linha. Caso clássico de *"na minha máquina funciona"*.
+
+### Comandos executados (no Windows)
+
+```powershell
+# 1. autenticar (chave digitada pelo usuário no SEU terminal, nunca no chat)
+"CHAVE" | gh auth login --with-token
+gh auth setup-git
+
+# 2. identidade git (estava vazia no Windows)
+git config --global user.name  "landeletronic"
+git config --global user.email "landeletronica@gmail.com"
+
+# 3. montar o repositório
+git init -b main
+git add -A
+git add --renormalize .          # aplica o .gitattributes novo
+git commit -m "chore: inicializa repositorio de estudo DevOps/AIOps"
+
+# 4. criar no GitHub a PARTIR do diretorio correto
+cd $env:USERPROFILE\Downloads\AIOps\devops-profissional
+gh repo create devops-profissional --public --source=. --push `
+  --description "Laboratorio e caderno de estudo de DevOps/AIOps: ..."
+```
+
+### Três erros de detecção MEUS nesta etapa
+
+Registrados porque foram todos do mesmo tipo — e o padrão importa:
+
+| # | Erro | Por quê |
+|---|---|---|
+| 1 | `"autenticado"` quando **não** estava | `-match 'Logged in'` é **case-insensitive** por padrão no PowerShell e casou dentro de *"**not logged into** any GitHub hosts"* |
+| 2 | `"NAO autenticado"` quando **estava** | regex esperava `- Logged in to`; a saída real trazia `✓ Logged in to` |
+| 3 | `"JA EXISTE"` quando **não** existia | `gh repo view` num repo inexistente manda erro para o **stderr** contendo a palavra *"Repository"* — e o `-match` casou |
+
+**A causa é uma só: confiar em `string matching` de saída.** A correção foi
+usar **código de saída**:
+
+```powershell
+gh repo view landeletronic/devops-profissional 2>$null | Out-Null
+if ($LASTEXITCODE -eq 0) { "existe"; exit 1 }   # exit 0 = encontrou
+```
+
+> **Lição:** *\"não deu erro\" não é sucesso* — e ***\"deu erro\" não é fracasso***
+> se a leitura foi errada. Verificar por **código de saída** ou por **estado
+> interrogável** (JSON), nunca por texto colado numa saída. É o mesmo erro do
+> Err01, visto pelo outro lado: lá o `apt` não deu erro e instalou a versão
+> errada; aqui eu não dê erro e li errado duas vezes.
+
+### Estado final verificado via API
+
+```
+nome       : devops-profissional
+visibilidade: PUBLIC
+url        : https://github.com/landeletronic/devops-profissional
+branch     : main
+arquivos   : 252  ·  6,68 MB
+
+RAIZ:  .gitattributes  .gitignore  CREDITS.md  README.md
+       [dirs] docs  lab  notas  scripts
+
+REGRA 1:  [ok] nenhum segredo ou artefato publicado
+          .env.example publicados: 5
+```
+
+**Raiz conforme exigido:** `README.md` é o único arquivo de conteúdo, mais os
+3 de configuração do Git (`.gitignore`, `.gitattributes`) e o `CREDITS.md`.
+
+**Veredito:** `[OK]` — repositório próprio, **público**, descrito, com pastas
+organizadas, sem nenhum segredo, atribuição declarada.
+
+---
+
+## Nota de método
+
+O caderno é atualizado **após cada passo concluído**, e não em tempo real.
+Enquanto um passo está em execução, ele não aparece aqui. Isso é deliberado:
+registra-se **o que se concluiu**, com veredito, não o que está em curso.
+
+---
+
+*Última atualização: 2026-10-22 — **M0 concluído (14/14)** e **Passo 6 —
+repositório `landeletronic/devops-profissional` publicado.** Pendências do M0
+resolvidas: comentário WSL2 corrigido, destino do `git push` criado.
+Nenhuma credencial publicada (auditoria 9/9).*
