@@ -1,0 +1,8 @@
+# Overrides locais de estudo (nao versionado no upstream).
+# Objetivo: os servicos do compose voltam sozinhos apos restart do daemon
+# ou religacao da instancia.
+services:
+  postgres:
+    restart: unless-stopped
+  pgadmin:
+    restart: unless-stopped

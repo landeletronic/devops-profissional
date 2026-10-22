@@ -1,0 +1,28 @@
+# Normaliza o fim de linha: LF no repositório e nos arquivos de trabalho.
+# Sem isto, no Windows o Git converte .sh para CRLF e o bash recusa o script.
+* text=auto eol=lf
+
+# Forca LF onde quebraria algo
+*.sh    text eol=lf
+*.bash  text eol=lf
+*.py    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.ini   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+Dockerfile text eol=lf
+
+# Binarios: nunca tocar
+*.pdf   binary
+*.png   binary
+*.gif   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.svg   text
+*.lock  text
