@@ -1573,7 +1573,62 @@ organizadas, sem nenhum segredo, atribuição declarada.
 > **Nota de método sobre a nota:** errar num simulado é o cenário **barato**.
 > O mesmo erro num incidente real custa muito mais. Por isso se treina assim.
 
-### Q1 — Arquitetura e `localhost`
+### Enunciado completo — 21 questões em 4 blocos
+
+> Este é o simulado **na íntegra**, como foi aplicado. As **respostas dadas e as
+> correções** das questões **Q1–Q6** (Bloco 1, o único respondido até aqui)
+> seguem na seção seguinte. As questões **Q7–Q21 estão sem resposta** — é
+> material pendente para a retomada.
+>
+> A aula de aprofundamento que corrige o Bloco 1 está em
+> [`docs/AULA-M0-PROFUNDIZACAO.md`](../docs/AULA-M0-PROFUNDIZACAO.md).
+
+#### Bloco 1 — Fundamentos (reconhecimento) · *respondido, corrigido*
+
+| | Pergunta |
+|---|---|
+| **Q1** | Descreva a arquitetura do laboratório: quem edita, quem executa. Por que `http://localhost:8000` não funciona a partir do seu Windows? |
+| **Q2** | Por que o `ca-certificates` foi instalado antes de qualquer outra coisa? O que concretamente quebraria sem ele? |
+| **Q3** | Cite **três** razões pelas quais o Node **24** foi o escolhido — sendo a principal delas baseada em evidência, não em gosto. |
+| **Q4** | O que a directiva `live-restore: true` faz no `daemon.json`? Dê uma situação real em que ela salva você. |
+| **Q5** | Qual a diferença entre o **cluster** `aiops` e o **contexto** `kind-aiops`? E o que acontece se o `kubectl` apontar para o contexto errado? |
+| **Q6** | Neste ambiente existem, ou podem existir, dois `python3`. De onde veio o `python3` que o `uv` usou no `uv sync`? E por que ele veio? |
+
+#### Bloco 2 — Mecanismos (o *porquê*) · *pendente*
+
+| | Pergunta |
+|---|---|
+| **Q7** | Reconte a **cascata do Err01** em 5 passos: sintoma inicial → causa raiz → efeito → efeito → efeito final. Qual foi a etapa **mais perigosa** e por quê? |
+| **Q8** | O `apt policy nodejs` mostrou duas fontes com prioridade **500**. Explique por que o `apt` escolheu a 24 em vez da 20. O que a linha `Candidate:` entrega que nenhuma outra entrega? |
+| **Q9** | Na instalação do Node 24, o `apt` **removeu 4 pacotes** e **instalou 8 novos** que ninguém pediu — incluindo o `python3`. Esperado ou sinal de problema? Justifique os dois casos. |
+| **Q10** | Existem três tipos de shell — *login interativo*, *interativo não-login* e *não-interativo*. Cite os arquivos que cada um lê e **um contexto real** de cada. Por que isso quase gerou um alarme falso com o `uv`? |
+| **Q11** | O instalador do `uv` criou um snippet que **checa antes de agir**. Que propriedade de software é essa? Dê **mais um exemplo** do M0 com a mesma propriedade. |
+| **Q12** | Por que o `.gitattributes` com `* text=auto eol=lf` era necessário? Cite **qual arquivo** seria quebrado e **como** ele quebraria. |
+
+#### Bloco 3 — Diagnóstico (aplicadas) · *pendente*
+
+| | Pergunta |
+|---|---|
+| **Q13** | Você vê um pod em `ImagePullBackOff` e dez em `CrashLoopBackOff`. **Piorou ou não piorou?** Como distinguir um *BackOff* de um erro novo? |
+| **Q14** | O `aiops-lab.sh status` listou `FailedScheduling` e `NodeNotReady` — mesmo com **todos** os pods de `kube-system` em `1/1 Running`. Explique a contradição. O que isso ensina sobre `kubectl get events`? |
+| **Q15** | Um colega vê `teste-b` com 9 pods em `Error` e diz: *"tem coisa quebrada, preciso consertar"*. Ele está certo? Justifique — e diga **o que precisaria investigar** para ter certeza. |
+| **Q16** | O relatório no banco está `status = INCOMPLETO`, com `severity` e `title` vazios. Trate o `main.py:60` como suspeito: ele diz o quê? Isso é **bug**, **erro** ou **comportamento projetado**? |
+| **Q17** | O script reporta `MCP :3001/mcp -> no ar (HTTP 405)`. Um 405 normalmente indica problema. Por que aqui ele indica que **está funcionando**? O que você faria para **confirmar**? |
+| **Q18** | Você vai publicar um repositório **público** com um `.env`. Liste **3 verificações** antes do push — e explique por que checar apenas *"não vejo nenhuma chave aqui"* é insuficiente. |
+
+#### Bloco 4 — Síntese · *pendente*
+
+| | Pergunta |
+|---|---|
+| **Q19** | Duas frases foram registradas: *"Não deu erro" não é sucesso* e *"Deu erro" não é fracasso — se a leitura foi errada*. Use **dois exemplos reais do M0**, um de cada, e explique por que apontam para o **mesmo problema de fundo**. |
+| **Q20** | Defina e distinga, com um exemplo do laboratório em cada: **evento** × **estado** · **incidente** × **problema** · **transitório** × **persistente**. |
+| **Q21** | Se a VM `pve-lab` fosse perdida **amanhã de manhã**: o que você perde? O que **não** perde? Isso constitui um problema de *backup*? Por quê? |
+
+**Estado:** 6 de 21 respondidas (Bloco 1) · 15 pendentes.
+
+---
+
+### Correção do Bloco 1 (Q1–Q6)
 
 **Pergunta:** quem edita, quem executa, e por que `localhost:8000` não funciona
 a partir do Windows?

@@ -7,6 +7,40 @@
 
 ---
 
+## 🪂 Você chegou de paraquedas? Comece aqui
+
+Este é o **caderno de estudos de um iniciante em DevOps/AIOps** — não é
+documentação oficial de produto. O autor é um estudante em transição de
+carreira e o material registra **o que ele aprendeu, o que errou e como
+consertou**. Você é bem-vindo a ler e a copiar os comandos, mas saiba que isto
+é **material de aprendizagem**, não tutorial validado para produção.
+
+### O contexto, em quatro linhas
+
+| | |
+|---|---|
+| **O que é o M0** | o módulo **0** do treinamento: **montar o laboratório** — de uma VM Debian sem nada instalado até um cluster Kubernetes operante com uma aplicação no ar. |
+| **O laboratório** | duas máquinas: uma **Windows** (editor, Git) e uma VM Debian **`pve-lab`** (`192.168.15.10`), onde **tudo é executado** (Docker, Kubernetes, banco, aplicação). |
+| **O simulado** | ao fim do M0, **21 perguntas** em 4 blocos para testar o que realmente ficou claro. Foram respondidas as 6 primeiras — e **3 estavam erradas**. |
+| **Esta aula** | é a **explicação de aprofundamento exatamente dessas 6 perguntas erradas**. Cada tópico nasceu de uma pergunta real e de uma resposta errada. |
+
+### Onde está o quê neste repositório
+
+| Documento | O que contém |
+|---|---|
+| [`README.md`](../README.md) | ponto de entrada — o que é este repositório e por que existe |
+| [`notas/CADERNO-DE-LABORATORIO.md`](../notas/CADERNO-DE-LABORATORIO.md) | **o registro de estudo**: todos os passos, erros e correções — **incluindo as 21 perguntas do simulado na íntegra** e a correção das 6 respondidas |
+| [`docs/GLOSSARIO-DEVOPS.md`](GLOSSARIO-DEVOPS.md) | **87 verbetes** de DevOps explicados em linguagem simples |
+| [`docs/PLANO-DE-ENSINO.md`](PLANO-DE-ENSINO.md) | o roteiro do treinamento (módulos M0 a M6) |
+| **este documento** | só a explicação das 6 perguntas erradas |
+
+> **Se quiser ver a pergunta original, a resposta dada e a correção** de cada
+> um dos 6 conceitos, tudo isso está em
+> [`notas/CADERNO-DE-LABORATORIO.md`](../notas/CADERNO-DE-LABORATORIO.md),
+> na seção **"Simulado M0"**. Aqui abaixo só aparece a **explicação**.
+
+---
+
 ## Como usar este documento
 
 Cada tópico tem a mesma estrutura:
@@ -36,7 +70,16 @@ No final: um **fichamento** (resumo em tabela) e uma **autoavaliação** nova.
 
 # Tópico 1 — Arquitetura: por que `localhost` falha
 
-*Corrige a Q1.*
+> ### 📋 A pergunta que originou este tópico
+>
+> **Q1 — Bloco 1 · Fundamentos**
+>
+> *"Descreva a arquitetura do laboratório: quem edita, quem executa. Por que
+> `http://localhost:8000` não funciona a partir do seu Windows?"*
+>
+> ✏️ A resposta **dada** (parcialmente errada) e a **correção** estão no
+> [caderno de laboratório — Simulado M0](../notas/CADERNO-DE-LABORATORIO.md).
+> O que segue é o **aperfeiçoamento** dela.
 
 ## O problema
 
@@ -157,7 +200,16 @@ O endereço não mudou; **mudou quem você estava chamando**.
 
 # Tópico 2 — `ca-certificates`: a cadeia de confiança
 
-*Corrige a Q2.*
+> ### 📋 A pergunta que originou este tópico
+>
+> **Q2 — Bloco 1 · Fundamentos**
+>
+> *"Por que o `ca-certificates` foi instalado antes de qualquer outra coisa? O
+> que concretamente quebraria sem ele?"*
+>
+> ✏️ A resposta **dada** (parcialmente errada) e a **correção** estão no
+> [caderno de laboratório — Simulado M0](../notas/CADERNO-DE-LABORATORIO.md).
+> O que segue é o **aperfeiçoamento** dela.
 
 ## O problema
 
@@ -325,7 +377,17 @@ passaporte parece falso — inclusive os verdadeiros.
 
 # Tópico 3 — Repositórios, assinaturas e o `apt policy`
 
-*Corrige a Q3 e detalha o Err01.*
+> ### 📋 A pergunta que originou este tópico
+>
+> **Q3 — Bloco 1 · Fundamentos**
+>
+> *"Cite **três** razões pelas quais o Node **24** foi o escolhido — sendo a
+> principal delas baseada em evidência, não em gosto."*
+>
+> ✏️ A resposta **dada** (citou só **uma** razão — falhou por entregar menos do
+> que a pergunta pedia) e a **correção** estão no
+> [caderno de laboratório — Simulado M0](../notas/CADERNO-DE-LABORATORIO.md).
+> O que segue é o **aperfeiçoamento** dela.
 
 ## O problema
 
@@ -456,7 +518,20 @@ nada. É o `apt policy` levado ao extremo — ler antes de agir.
 
 # Tópico 4 — Docker: `daemon` × `container` (`live-restore` × volume)
 
-*Corrige a Q4 — este foi o erro conceitual.*
+> ### 📋 A pergunta que originou este tópico
+>
+> **Q4 — Bloco 1 · Fundamentos** · *resposta ERRADA*
+>
+> *"O que a directiva `live-restore: true` faz no `daemon.json`? Dê uma
+> situação real em que ela salva você."*
+>
+> ✏️ A resposta **dada** (errada — confundiu `live-restore` com persistência de
+> dados) e a **correção** estão no
+> [caderno de laboratório — Simulado M0](../notas/CADERNO-DE-LABORATORIO.md).
+> O que segue é o **aperfeiçoamento** dela.
+>
+> > **Esta era uma das três perguntas que eu errei.** Se quiser ver como eu
+> > errei e o porquê, comece pelo caderno — aqui só está o conceito certo.
 
 ## O problema
 
@@ -603,7 +678,20 @@ o próprio gerente reinicia.
 
 # Tópico 5 — Kubernetes: cluster × contexto
 
-*Corrige a Q5 — o conceito mais cobrado em entrevista.*
+> ### 📋 A pergunta que originou este tópico
+>
+> **Q5 — Bloco 1 · Fundamentos** · *resposta ERRADA*
+>
+> *"Qual a diferença entre o **cluster** `aiops` e o **contexto** `kind-aiops`?
+> E o que acontece se o `kubectl` apontar para o contexto errado?"*
+>
+> ✏️ A resposta **dada** (errada — falou de "dois clusters", que é outro assunto)
+> e a **correção** estão no
+> [caderno de laboratório — Simulado M0](../notas/CADERNO-DE-LABORATORIO.md).
+> O que segue é o **aperfeiçoamento** dela.
+>
+> > **Esta era uma das três perguntas que eu errei.** Se quiser ver como eu
+> > errei e o porquê, comece pelo caderno — aqui só está o conceito certo.
 
 ## O problema
 
@@ -800,7 +888,17 @@ antiga atende. **O aparelho não avisa que está ligando para o lugar errado.**
 
 # Tópico 6 — Python: intérprete × ambiente × `uv`
 
-*Corrige a Q6.*
+> ### 📋 A pergunta que originou este tópico
+>
+> **Q6 — Bloco 1 · Fundamentos** · *resposta quase completa*
+>
+> *"Neste ambiente existem, ou podem existir, dois `python3`. De onde veio o
+> `python3` que o `uv` usou no `uv sync`? E por que ele veio?"*
+>
+> ✏️ A resposta **dada** (quase completa — acertou a origem, mas não explicou
+> *por que* existem dois) e a **correção** estão no
+> [caderno de laboratório — Simulado M0](../notas/CADERNO-DE-LABORATORIO.md).
+> O que segue é o **aperfeiçoamento** dela.
 
 ## O problema
 
@@ -998,4 +1096,35 @@ não existisse?
 - **A7** é a pergunta de entrevista: quem acerta, entendeu a **estrutura**, não
   o vocabulário.
 
-Quando responder, registro no caderno junto com as correções do simulado M0.
+---
+
+## O que ficou pendente
+
+Estas 6 perguntas cobrem apenas o **Bloco 1** do simulado. O caderno registra
+**21 perguntas no total, em 4 blocos** — as outras **15 estão ainda sem
+resposta**:
+
+| Bloco | Perguntas | Estado |
+|---|---|---|
+| **1 — Fundamentos** | Q1 a Q6 | ✅ respondido e corrigido *(este documento)* |
+| **2 — Mecanismos** | Q7 a Q12 | ⏳ pendente |
+| **3 — Diagnóstico** | Q13 a Q18 | ⏳ pendente |
+| **4 — Síntese** | Q19 a Q21 | ⏳ pendente |
+
+O enunciado completo das 21 está em
+[`notas/CADERNO-DE-LABORATORIO.md`](../notas/CADERNO-DE-LABORATORIO.md),
+seção **"Simulado M0 — enunciado completo"**.
+
+---
+
+## Onde continuar a leitura
+
+| Documento | Para quê |
+|---|---|
+| [`README.md`](../README.md) | o repositório inteiro — visão geral |
+| [`notas/CADERNO-DE-LABORATORIO.md`](../notas/CADERNO-DE-LABORATORIO.md) | **o registro de estudo**: passo a passo, erros, correções e o simulado completo |
+| [`docs/GLOSSARIO-DEVOPS.md`](GLOSSARIO-DEVOPS.md) | os **87 termos** usados aqui, em linguagem simples |
+| [`docs/PLANO-DE-ENSINO.md`](PLANO-DE-ENSINO.md) | o roteiro dos módulos M0 a M6 |
+
+Quando as 15 perguntas pendentes forem respondidas, o registro volta para o
+caderno — este documento permanece como a **explicação do Bloco 1**.
