@@ -2407,6 +2407,38 @@ registra-se **o que se concluiu**, com veredito, não o que está em curso.
 
 ---
 
+## Passo extra — limpeza final (2026-11-01)
+
+Após a auditoria (28 verificações: 26 passou, 2 divergiu, 0 falhou), o dono
+do projeto autorizou dois fechamentos:
+
+**1. Clone KubeDev limpo** (`~/projetos/imersao-aiops-prod-01`):
+
+- `docs/`, `lab/`, `notas/`, `scripts/` adicionados ao `.gitignore` do clone;
+- 284 deleções pendentes (os arquivos do upstream que foram movidos para
+  `lab/`) registradas num commit **local** `9e67c75` no branch
+  `feat/estudo-devops` — **sem push**, remoto KubeDev intocado;
+- `git status`: **0 linhas** (era 288) · material de estudo com **0
+  rastreados** (R13 preservada).
+
+**2. Sobras apagadas** (autorizado explicitamente):
+
+- `~/staging-devops-profissional` — 7,9 MB (cópia órfã, caderno desatualizado);
+- `~/devops-profissional-staging.tar.gz` — 3,4 MB (staging de 2026-10-22).
+
+**Nota honesta:** o backup `/tmp/backup-antes-consolidar.tar.gz` (6,9 MB)
+**não existe mais** — o reboot da VM para aplicar os 8 GB limpou o `/tmp`.
+Não houve perda: o código está no GitHub (`54846f4`), o lab foi verificado
+funcionando depois do reboot, e os dados vivem no volume nomeado do
+Postgres. **Lição:** backup em `/tmp` é temporário **por definição** —
+backup que precisa sobreviver a reboot não vai em `/tmp`.
+
+**Estado final:** lab de pé (app `:8000` → 200, MCP `:3001` → 405), 4
+commits publicados no portfólio, caderno com 21/21 respondidas e A1–A7,
+clone limpo, sobras apagadas.
+
+---
+
 *Última atualização: 2026-11-01 — **M0 concluído (14/14)** · **Simulado M0
 completo: 21/21 respondidas e corrigidas** (Bloco 2 Q7–Q12, Bloco 3 Q13–Q18,
 Bloco 4 Q19–Q21) · **Autoavaliação A1–A7 respondida** · **Consolidação da
