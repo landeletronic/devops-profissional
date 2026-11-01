@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  Repositório público de estudo e prática de DevOps/AIOps (github.com/landeletronic/devops-profissional).
+  Material didático em português do Brasil para iniciante em transição de carreira.
+  Fonte do material: imersao-aiops-prod-01 (KubeDev).
+
+  Tech stack do laboratório:
+  - Estação: Windows 192.168.15.38 (editor, Git, agente)
+  - Execução: pve-lab 192.168.15.10 (VM Debian, Docker, kind, Kubernetes)
+  - Aplicação: FastAPI + Python 3.13, uv, Alembic, PostgreSQL, MCP Server Kubernetes
+  - Cluster kind "aiops"; serviços em http://192.168.15.10:<porta>
+
+  Convenções:
+  - Commits convencionais (feat/fix/docs/chore) com git commit -F
+  - Evidência sempre por exit code, HTTP code ou hash — nunca por string matching
+  - Raiz do repositório contém apenas README.md, CREDITS.md, .gitignore, .gitattributes e diretórios
+  - Sem APIs pagas; sem token no chat; material do upstream KubeDev fica sem rastreamento
+
+rules:
+  proposal:
+    - Sempre seções "Why" e "What Changes"
+    - Listar capabilities afetadas e impacto
+  tasks:
+    - Tarefas numeradas por seção, com checkbox
+    - Cada tarefa diz qual evidência a comprova
+  design:
+    - Registrar decisões numeradas (D1, D2, ...) com a alternativa rejeitada
+  validation:
+    - Tabela com Item | Resultado | Evidência
+    - Evidência = valor observado real (comando e saída)
