@@ -1098,22 +1098,25 @@ não existisse?
 
 ---
 
-## O que ficou pendente
+## O que ficou pendente — resolvido
 
-Estas 6 perguntas cobrem apenas o **Bloco 1** do simulado. O caderno registra
-**21 perguntas no total, em 4 blocos** — as outras **15 estão ainda sem
-resposta**:
+Este documento cobre o **Bloco 1** do simulado. O caderno registra **21
+perguntas no total, em 4 blocos** — e **todas foram respondidas** em
+2026-11-01:
 
 | Bloco | Perguntas | Estado |
 |---|---|---|
 | **1 — Fundamentos** | Q1 a Q6 | ✅ respondido e corrigido *(este documento)* |
-| **2 — Mecanismos** | Q7 a Q12 | ⏳ pendente |
-| **3 — Diagnóstico** | Q13 a Q18 | ⏳ pendente |
-| **4 — Síntese** | Q19 a Q21 | ⏳ pendente |
+| **2 — Mecanismos** | Q7 a Q12 | ✅ respondido e corrigido — aprofundamento em [`AULA-M0-BLOCO2.md`](AULA-M0-BLOCO2.md) |
+| **3 — Diagnóstico** | Q13 a Q18 | ✅ respondido e corrigido |
+| **4 — Síntese** | Q19 a Q21 | ✅ respondido e corrigido |
+
+**Autoavaliação A1–A7:** ✅ respondida (registro no caderno).
 
 O enunciado completo das 21 está em
 [`notas/CADERNO-DE-LABORATORIO.md`](../notas/CADERNO-DE-LABORATORIO.md),
-seção **"Simulado M0 — enunciado completo"**.
+seção **"Simulado M0 — enunciado completo"**; as correções dos Blocos 2, 3
+e 4 seguem na seção **"Correção do Bloco 2, 3 e 4"**.
 
 ---
 
@@ -1126,5 +1129,6 @@ seção **"Simulado M0 — enunciado completo"**.
 | [`docs/GLOSSARIO-DEVOPS.md`](GLOSSARIO-DEVOPS.md) | os **87 termos** usados aqui, em linguagem simples |
 | [`docs/PLANO-DE-ENSINO.md`](PLANO-DE-ENSINO.md) | o roteiro dos módulos M0 a M6 |
 
-Quando as 15 perguntas pendentes forem respondidas, o registro volta para o
-caderno — este documento permanece como a **explicação do Bloco 1**.
+Este documento permanece como a **explicação do Bloco 1**; os demais blocos
+estão corrigidos no caderno, e o Bloco 2 ganhou aula própria em
+[`AULA-M0-BLOCO2.md`](AULA-M0-BLOCO2.md).

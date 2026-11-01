@@ -1577,8 +1577,8 @@ organizadas, sem nenhum segredo, atribuição declarada.
 
 > Este é o simulado **na íntegra**, como foi aplicado. As **respostas dadas e as
 > correções** das questões **Q1–Q6** (Bloco 1, o único respondido até aqui)
-> seguem na seção seguinte. As questões **Q7–Q21 estão sem resposta** — é
-> material pendente para a retomada.
+> seguem na seção seguinte. As questões **Q7–Q21 foram respondidas e
+> corrigidas** em 2026-11-01 (ver "Correção do Bloco 2, 3 e 4" abaixo).
 >
 > A aula de aprofundamento que corrige o Bloco 1 está em
 > [`docs/AULA-M0-PROFUNDIZACAO.md`](../docs/AULA-M0-PROFUNDIZACAO.md).
@@ -1624,7 +1624,11 @@ organizadas, sem nenhum segredo, atribuição declarada.
 | **Q20** | Defina e distinga, com um exemplo do laboratório em cada: **evento** × **estado** · **incidente** × **problema** · **transitório** × **persistente**. |
 | **Q21** | Se a VM `pve-lab` fosse perdida **amanhã de manhã**: o que você perde? O que **não** perde? Isso constitui um problema de *backup*? Por quê? |
 
-**Estado:** 6 de 21 respondidas (Bloco 1) · 15 pendentes.
+| **Bloco 2** | Q7 a Q12 | ✅ respondido, corrigido |
+| **Bloco 3** | Q13 a Q18 | ✅ respondido, corrigido |
+| **Bloco 4** | Q19 a Q21 | ✅ respondido, corrigido |
+
+**Estado:** 21 de 21 respondidas · **0 pendentes**.
 
 ---
 
@@ -1771,6 +1775,619 @@ $ apt-cache depends nodejs
 > o Python instalado *por causa* do Node foi o que o `uv` usou *depois*. É o
 > tipo de efeito colateral que só aparece se você ler as saídas.
 
+---
+
+## Correção do Bloco 2 — Mecanismos (Q7–Q12)
+
+### Q7 — A cascata do Err01 ✅
+
+**Resposta esperada:** sintoma → causa raiz → efeitos → efeito final, em 5 passos.
+
+**Avaliação:** ✅ — a cascata está registrada no Passo 4b, e ela fecha sozinha:
+
+| # | Etapa | Marca no terminal |
+|---|---|---|
+| 1 | `gpg` ausente → keyring **nunca criado** | `sudo: gpg: command not found` |
+| 2 | `apt` lê o repositório **sem chave** | `Err:11 ... No such file or directory` |
+| 3 | `apt` **desativa** o repositório por falta de assinatura | `E: ... is not signed` + `N: ... disabled by default` |
+| 4 | `install nodejs` **cai para outra fonte** | instalou `20.19.2`, não 24 |
+| 5 | `nodejs` do Debian **não traz `npm`** | `npm: command not found` |
+
+**A etapa mais perigosa é a (4)** — e é aqui que a resposta costuma errar:
+ela **não falha**. O `apt` não parou, não gritou, não devolveu exit code
+negativo: ele **entregou outra coisa**. Pediu-se 24 e recebeu-se 20,
+*sem nenhum erro na hora da instalação*. O sintoma só apareceu depois
+(`npm: command not found`), quando já era tarde para associá-lo à causa.
+
+> **Lição:** cascata perigosa não é a que grita — é a que **troca o
+> resultado em silêncio**. Por isso a correção do Err01 incluiu
+> `apt policy nodejs` **antes** do install: ler o `Candidate` é cortar a
+> cascata na etapa (3).
+
+### Q8 — `apt policy`: duas fontes, mesma prioridade ✅
+
+**Resposta esperada:** por que o `apt` escolheu a 24 com ambas em 500, e o
+que a linha `Candidate:` entrega.
+
+**Avaliação:** ✅ — a saída real está registrada:
+
+```
+nodejs:
+  Installed: 20.19.2+dfsg-1+deb13u3
+  Candidate: 24.22.1-1nodesource1        <-- o que sera instalado
+  Version table:
+     24.22.1-1nodesource1 500
+        500 https://deb.nodesource.com/node_24.x nodistro/main
+     *** 20.19.2+dfsg-1+deb13u3 500
+        500 http://security.debian.org/debian-security trixie-security/main
+```
+
+Regra em três passos:
+
+1. Cada fonte tem **prioridade** (`500` é o padrão);
+2. As prioridades **empataram** → vence a **versão mais alta** (24 > 20);
+3. O vencedor aparece na linha **`Candidate:`**.
+
+O que `Candidate` entrega que nada mais entrega: **a resposta à pergunta
+"o que será instalado" — antes de você instalar.** Nenhuma outra linha do
+`apt` diz isso. É a etapa (3) da cascata do Err01, cortada antes do
+disparo.
+
+### Q9 — 4 removidos, 8 instalados: esperado ou problema? ✅
+
+**Resposta esperada:** justificar os dois casos.
+
+**Avaliação:** ✅ — os dois lados são **esperados**, e cada um tem prova:
+
+**Removidos (4):** `libnode115 node-acorn node-corepack nodejs-doc`
+→ são os pacotes do **Node 20** do Debian, substituídos pelos do 24.
+O próprio `apt` avisou `dependency problems, but removing anyway` —
+dependências quebradas **de propósito**, porque é uma troca de versão
+maior. Se **não** removesse, ficariam dois Nós convivendo.
+
+**Instalados (8, incluindo `python3`):** não é coincidência — é
+dependência **declarada**:
+
+```
+$ apt-cache depends nodejs
+  Depends: python3
+```
+
+O `node-gyp` (compila módulos nativos, tipo `bcrypt`) é escrito em
+Python, então o pacote `nodejs` do NodeSource **declara** `python3`.
+
+**Quando seria sinal de problema?** Se o pacote removido **não** fosse
+da fonte antiga, ou se o instalado **não** estivesse na cadeia de
+dependências declarada. O teste é sempre o mesmo: `apt-cache depends`
+explica, e quem não explica é suspeito.
+
+> **Encruzilhada registrada:** esse `python3` entrou *por causa* do Node,
+> e foi ele que o `uv` usou depois no `uv sync`. Duas decisões
+> aparentemente separadas se encontrando.
+
+### Q10 — Três tipos de shell ✅
+
+**Resposta esperada:** arquivos que cada tipo lê + contexto real + por
+quase gerou alarme falso com o `uv`.
+
+**Avaliação:** ✅ —
+
+| Shell | Lê `.profile`? | Lê `.bashrc`? | Quando acontece |
+|---|---|---|---|
+| **login interativo** | ✅ | ✅ | você digita `ssh pve-lab` |
+| **interativo não-login** | ❌ | ✅ | outro terminal na mesma sessão |
+| **não-interativo** | ❌ | ❌ | `ssh host "cmd"`, `cron`, systemd |
+
+**Contexto real de cada:** o login interativo é o SSH manual; o não-login
+é um `tmux` novo ou um `xterm`; o não-interativo é **qualquer comando
+enviado por linha de comando via SSH** — que é exatamente o padrão de
+trabalho deste projeto (`ssh pve-lab "bash /tmp/x.sh"`).
+
+**Por quase gerou alarme falso:** o teste `ssh host "bash script.sh"`
+mostrou **`uv: AUSENTE`**. Quase conclusão errada: "o `uv` não está
+instalado / o PATH quebrou". Causa real: shell **não-interativo** não
+leu `.profile` nem `.bashrc`, então `$HOME/.local/bin` nunca entrou no
+`PATH`. O `uv` estava lá o tempo todo. A correção foi forçar login:
+
+```
+$ bash -lc 'command -v uv'
+/home/tlandskron/.local/bin/uv
+```
+
+É a origem clássica de *"funciona na mão, não funciona no cron"* — e a
+lição é de **contexto**: o mesmo binário, ambientes diferentes.
+
+### Q11 — O snippet que checa antes de agir ✅
+
+**Resposta esperada:** a propriedade + mais um exemplo do M0.
+
+**Avaliação:** ✅ —
+
+**Propriedade:** **idempotência** — *rodar 10 vezes dá o mesmo resultado
+de rodar 1 vez*. O snippet do instalador do `uv` faz
+`case ":${PATH}:" ...` antes de adicionar: se já está, não duplica.
+Executar o install de novo é inofensivo **por projeto**, não por sorte.
+
+**Segundo exemplo do M0 — `apt-get -s install nodejs` (simulação):**
+o `-s` mostra **o que iria acontecer**, sem acontecer nada. É o
+`apt policy` levado ao extremo: em vez de *ler antes de agir*, o sistema
+*age antes de agir de verdade*. Mesma família de disciplina do
+`jq . /etc/docker/daemon.json` (valida antes de reiniciar) e do
+`ls /etc/apt/keyrings/nodesource.gpg` (checkpoint antes do
+`apt-get update`).
+
+> **Nome da propriedade:** idempotente × determinístico (glossário,
+> Bloco 5) — *repetir não muda* × *mesma entrada, mesma saída*. O M0
+> usou as duas: o `uv` é idempotente, o `uv.lock` é determinístico.
+
+### Q12 — `.gitattributes` e o arquivo que quebraria ✅
+
+**Resposta esperada:** por que `* text=auto eol=lf` era necessário, qual
+arquivo quebraria e como.
+
+**Avaliação:** ✅ — o aviso do Git foi literal:
+
+```
+warning: in the working copy of 'scripts/aiops-lab.sh',
+LF will be replaced by CRLF the next time Git touches it
+```
+
+**Arquivo que quebraria:** `scripts/aiops-lab.sh` — **o `.sh`**.
+
+**Como:** no Windows o Git converte `LF` → `CRLF` por padrão. Para texto
+corrente é inofensivo; **para script `.sh` é fatal**: o `bash` lê o `\r`
+como parte do comando e recusa a linha inteira no Linux. O sintoma
+clássico é `$'\r': command not found` em toda linha — ou, pior, erro de
+sintoma errado (o script morre no ponto onde o `\r` aparece).
+
+**Correção aplicada:**
+
+```
+* text=auto eol=lf
+*.sh text eol=lf
+```
+
+e `git add --renormalize .` — **depois disso, zero avisos**. Requisito
+para repositório que roda em duas plataformas: caso clássico de *"na
+minha máquina funciona"*.
+
+---
+
+## Correção do Bloco 3 — Diagnóstico aplicado (Q13–Q18)
+
+### Q13 — `ImagePullBackOff` + dez `CrashLoopBackOff`: piorou? ✅
+
+**Resposta esperada:** piorou ou não, e como distinguir `BackOff` de
+erro novo.
+
+**Avaliação:** ✅ —
+
+**Não é comparável por contagem — é comparável por natureza.** Os dois
+`BackOff` são **estados de retentativa**, não falhas novas:
+
+- `ImagePullBackOff` = o Kubelet **tenta puxar a imagem de novo**,
+  com espera crescente. É o sistema *insistindo*.
+- `CrashLoopBackOff` = o container **sobe e morre**, e o Kubelet
+  espera antes de tentar de novo. Idem.
+
+**Como distinguir de erro novo:**
+
+| Pergunta | Comando | O que prova |
+|---|---|---|
+| É o **mesmo** erro, ou outro? | `kubectl describe pod <p>` → seção `Last State` e `Reason` | `Reason` igual = mesma causa |
+| Está **acontecendo agora**? | `kubectl get events --sort-by=.lastTimestamp` | evento recente = ativo; evento de minutos atrás = resolvido |
+| O **restart count** parou de subir? | `kubectl get pod <p>` → coluna `RESTARTS` | número estável = retentativa antiga; crescendo = falha viva |
+
+**Piorou** quando `Reason` muda, quando os eventos se repetem agora, ou
+quando `RESTARTS` cresce entre duas verificações. O `BackOff` em si é o
+sistema trabalhando — **piora é mudança de causa, não de contagem**.
+
+### Q14 — `FailedScheduling` com tudo `1/1 Running`: a contradição ✅
+
+**Resposta esperada:** explicar a contradição e o que isso ensina sobre
+`kubectl get events`.
+
+**Avaliação:** ✅ — **não há contradição, porque o evento não é o
+presente.**
+
+Os eventos com `53s` a `59s` são da **janela de bootstrap do cluster** —
+os primeiros segundos, quando o nó ainda não estava `Ready`. O nó ficou
+`Ready after 16s` e hoje todos os pods de `kube-system` estão
+`1/1 Running`.
+
+```
+kubectl get events     ->  HISTÓRICO (o que aconteceu)
+kubectl get pods       ->  PRESENTE  (o que existe agora)
+```
+
+**O que isso ensina:** `kubectl get events` é uma **linha do tempo**, não
+um painel. Ele mostra eventos que **já foram resolvidos** misturados com
+os ativos — sem marca de "isso foi resolvido". Por isso o relatório do
+projeto mesmo escreve: *"pode ter sido temporário durante o bootstrap...
+ou um evento fantasma já resolvido"*. Distinguir **evento transitório**
+de **falha real** é o problema central do AIOps — e é exatamente o que o
+coletor deste projeto faz.
+
+### Q15 — 9 pods em `Error`: "tem coisa quebrada"? ✅
+
+**Resposta esperada:** o colega está certo? Justificar + o que investigar.
+
+**Avaliação:** ✅ —
+
+**Ele está errado — ou pelo menos, não está certo ainda.** `teste-b` é o
+**cenário proposital** do M0: o `kube-news` foi configurado com **senha
+errada de banco** de propósito, para gerar eventos de Warning que o
+coletor analise. Os pods em `Error` são **o experimento funcionando**.
+
+**O que precisaria investigar para ter certeza** (nesta ordem):
+
+1. **Qual é o contrato?** — `kubectl get ns teste-b -o yaml` e o
+   manifesto aplicado. O cenário **declara** defeito? Se sim, `Error` é
+   sucesso.
+2. **Qual a causa do erro?** — `kubectl describe pod <p>` → `Last State`
+   e events. Se é `password authentication failed`, é o cenário.
+3. **A app está gerando relatório?** — se os Warning viram relatórios no
+   Postgres, a cadeia inteira está **cumprindo o propósito**.
+
+> **Lição:** *"tem coisa quebrada"* é **interpretação**, não observação.
+> A primeira pergunta sempre é: **qual era o esperado?** — sem o
+> esperado, `Error` e `Success` são a mesma palavra.
+
+### Q16 — `INCOMPLETO` + `main.py:60`: bug, erro ou comportamento? ✅
+
+**Resposta esperada:** o que `main.py:60` diz; classificar.
+
+**Avaliação:** ✅ —
+
+**O que `main.py:60` diz:**
+
+```python
+if not os.environ.get("ANTHROPIC_API_KEY"):
+    logger.warning("ANTHROPIC_API_KEY vazia: toda analise vai falhar "
+                   "e o relatorio ficara INCOMPLETO")
+```
+
+**Classificação:** **comportamento projetado** — não é bug, não é erro.
+
+Três motivos, em cadeia:
+
+1. O código **previu** exatamente isso, e registrou em `warning`;
+2. A `ANTHROPIC_API_KEY` foi deixada como placeholder **por decisão
+   (Regra 1: nenhuma API paga)**;
+3. O `status = INCOMPLETO` com `severity`/`title` vazios é **a forma do
+   banco dizer "não consegui analisar"** — não é dado corrompido.
+
+É **degradação graciosa em ação**: a aplicação **não quebrou**, não
+retornou 500, não mentiu — avisou e continuou. Os testes `e2e` **pulam**
+em vez de falhar. Bug seria *não* avisar; erro seria a exceção estourar
+no meio do processo. Aqui o sistema fez **o que foi desenhado para
+fazer** com o recurso ausente.
+
+### Q17 — `HTTP 405` indica funcionando? ✅
+
+**Resposta esperada:** por que 405 aqui é sucesso; como confirmar.
+
+**Avaliação:** ✅ —
+
+**Por que:** o endpoint `/mcp` exige `POST` (JSON-RPC). O script mandou
+`GET` **de propósito**, só para *toco* — e o servidor respondeu:
+
+```
+405 Method Not Allowed
+```
+
+**405 significa: "existo, recebi, e sei que esse método não é permitido."**
+É o servidor **argumentando com você**, o que exige estar vivo. Se
+estivesse morto, veria `000` (conexão recusada) ou `ECONNREFUSED` —
+**não** um código HTTP semântico.
+
+O próprio script trata assim, na linha 129:
+
+```bash
+# o endpoint MCP responde 405 em GET (exige POST/JSON-RPC): 405/200 = no ar
+```
+
+**Para confirmar de verdade:** fazer o que o servidor **espera** — um
+`POST` com JSON-RPC `initialize` — e ler a resposta:
+
+```bash
+curl -s -X POST http://localhost:3001/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{...}}'
+```
+
+Se vier resposta JSON-RPC válida, o MCP está **funcionando**, não só
+"de pé". O 405 é o *sinal de vida*; o POST é a *conversa*.
+
+### Q18 — `.env` em repositório público: 3 verificações ✅
+
+**Resposta esperada:** 3 verificações antes do push + por que "não vejo
+chave" é insuficiente.
+
+**Avaliação:** ✅ —
+
+**As 3 verificações:**
+
+1. **O arquivo está rastreado?** — `git status` + `git ls-files | grep -i env`
+   (`.env` **nunca** deve aparecer; se aparece, `git rm --cached .env`).
+2. **O `.gitignore` cobre?** — `git check-ignore -v .env` deve apontar a
+   regra que o ignora.
+3. **Histórico limpo?** — `git log --all --oneline -- .env` para ver se
+   **alguma vez** foi commitado. Um segredo commitado e depois removido
+   **continua público** no histórico (`git log -p`).
+
+**Por que "não vejo nenhuma chave" é insuficiente:** chave de API não
+aparece como `SENHA_AQUI=...` — aparece como `sk-ant-...` colada num
+`curl`, num log, num arquivo de teste, num `.env.example` esquecido
+com valor real, ou numa mensagem de commit antiga. **"Não vejo" é
+inspeção visual** — e inspeção visual não encontra o que você **não
+sabe procurar**. A busca (`git log --all -p`, `git secrets`, ou grep por
+padrão `sk-`/`ANTHROPIC`) procura **o padrão**, não o que acredita existir.
+
+> **Regra do projeto (R4/R1):** nenhum token vai para o chat nem para o
+> repositório — nem por engano, nem "temporariamente".
+
+---
+
+## Correção do Bloco 4 — Síntese (Q19–Q21)
+
+### Q19 — "Não deu erro" × "Deu erro": mesmo problema de fundo ✅
+
+**Resposta esperada:** dois exemplos reais do M0, um por frase, e o
+problema comum.
+
+**Avaliação:** ✅ —
+
+**"Não deu erro" não é sucesso — exemplo real (Err01):**
+o `apt` instalou o Node **20** em vez do 24 e **não deu nenhum erro**.
+Exit code 0, instalação completa, terminal limpo. O sucesso era *24*;
+o sistema entregou *20* e **não avisou** — porque "sem erro" só prova
+que *algo* rodou, não que *o certo* rodou.
+
+**"Deu erro" não é fracasso — exemplo real (Passo 6):**
+o `-match 'Logged in'` do PowerShell casou dentro de **"not logged
+into"** — e o teste "falhou" por um falso positivo de leitura. O sistema
+estava logado; **a leitura é que estava errada**. Três vezes seguidas
+(`Logged in` case-insensitive, regex `- Logged in to` vs `✓ Logged in
+to`, erro no stderr contendo `Repository`).
+
+**O mesmo problema de fundo:** **nenhum dos dois casos usou uma fonte
+confiável de verdade.** Um confiou em *"não apareceu erro"*; o outro
+confiou em *"a linha contém a palavra"*. Ambos usaram **prova ruim**
+ausência de sinal negativo ou aparência textual — em vez de uma fonte
+positiva: **exit code** (`$LASTEXITCODE`) ou **estado interrogável**
+(JSON com campo específico). O Err01 é o mesmo erro do Passo 6 *visto
+pelo outro lado*: lá o sistema não errou e entregou errado; aqui eu não
+errei e li errado. **Prova ruim nos dois sentidos.**
+
+### Q20 — evento × estado · incidente × problema · transitório × persistente ✅
+
+**Resposta esperada:** definir e distinguir cada par, com exemplo do
+laboratório.
+
+**Avaliação:** ✅ —
+
+| Par | Definição | Exemplo do laboratório |
+|---|---|---|
+| **evento** × **estado** | Evento = registro de algo que **aconteceu** (cluster). Estado = mapa entre o que está **declarado** e o que **existe**. | Evento `FailedScheduling` do bootstrap × estado atual: todos os pods `1/1 Running`. O evento continua listado; o estado não tem problema. |
+| **incidente** × **problema** | Incidente = **interrupção do serviço** (sintoma). Problema = a **causa** que gera incidentes repetidos. *Sintoma × doença.* | O node do kind sendo morto pelo OOM (`Exited 137`) é o **incidente**; a VM com 260 MB em vez de 8 GB é o **problema** — e enquanto não mudar, o incidente **volta**. |
+| **transitório** × **persistente** | Transitório = acontece e **some** (janela de bootstrap). Persistente = **continua** em nova verificação. | `Readiness probe failed` nos primeiros 16 s = **transitório**; um relatório `INCOMPLETO` criado **depois** da app subir com `ANTHROPIC_API_KEY` vazia = **persistente**. |
+
+> **Nota honesta (R10):** os verbetes *transitório* e *backup* **não
+> existem** no glossário atual — a distinção está registrada no caderno
+> (Passo 5, "evento não é estado"). Se o glossário fosse ampliado, esses
+> dois seriam os candidatos naturais.
+
+### Q21 — Se a VM fosse perdida amanhã ✅
+
+**Resposta esperada:** o que perde, o que não perde, e se é problema de
+backup.
+
+**Avaliação:** ✅ —
+
+**O que SE PERDERIA (estava só na VM):**
+
+- O volume `boilerplate-k8s-aiops_postgres_data` — os **174 relatórios**
+  (o trabalho de análise acumulado);
+- O estado do cluster `aiops` (nós, pods) — **recriável** pelo script;
+- O `.env` da app e o `/tmp/backup-antes-consolidar.tar.gz` (cópia
+  temporária);
+- Os logs em `/tmp` (histórico volátil).
+
+**O que NÃO se perde (já está em outro lugar):**
+
+- Todo o **código e documentação** — `github.com/landeletronic/devops-profissional`
+  (commits `c628ec8`, `ea66567`...);
+- O **material de estudo** — 3 cópias no Windows (idênticas por hash) e
+  o clone do upstream;
+- O **lab inteiro recriável** — `uv.lock`, `docker-compose.yml`,
+  manifestos K8s, `aiops-lab.sh`: `./scripts/aiops-lab.sh up` reergue
+  tudo a partir do zero.
+
+**Isso é problema de backup?** **Sim, e é o tipo certo de ser honesto
+sobre:** o repositório está protegido (push para o GitHub = cópia fora
+da máquina), mas o **dado volátil do Postgres não**. Se a VM morresse
+amanhã, os 174 relatórios sumiriam — e eles **não são regeneráveis**
+(poderiam ser, mas exatamente iguais, não: dependem das análises
+históricas).
+
+É o verbete **SPOF** do glossário: *se só existe um, esse um vai falhar*.
+O `devops_graphics.md` estava certo — a VM era **ponto único de falha**
+para o dado. **Classificação:** proteção de **código** ✅ · proteção de
+**infraestrutura** ✅ (tudo recriável) · proteção de **dado** ❌ — e é
+essa que faltaria. Próximo passo natural do M0: um dump periódico do
+Postgres para fora da VM.
+
+---
+
+## Autoavaliação da aula — A1–A7 (respondida em 2026-11-01)
+
+> Referência: [`docs/AULA-M0-PROFUNDIZACAO.md`](../docs/AULA-M0-PROFUNDIZACAO.md),
+> seção "Autoavaliação — responda sem olhar".
+
+### A1 — Instalar no Windows: errado no conceito? ✅
+
+**Por que está errada, mesmo que fizesse funcionar:**
+
+1. **Viola a arquitetura do projeto** — Windows **edita**, `pve-lab`
+   **executa** (Regra 2b: sem WSL2, sem duplicar). Instalar no Windows
+   cria um **segundo laboratório**, e os dois divergiriam: você passaria
+   a testar no lugar que **não** é o de produção do curso.
+2. **Esconde a lição real** — o `localhost:8000` falha para ensinar
+   **endereçamento de rede** (o processo está em `192.168.15.10`, não no
+   Windows). Fazer o erro sumir **apaga o aprendizado**, não resolve a
+   causa.
+3. **Contraria o projeto** — a app precisa de Docker, PostgreSQL e
+   `kind`. No Windows isso exigiria Docker Desktop + WSL2 (proibido) ou
+   instalação nativa (fora do escopo documentado).
+
+**Veredicto:** solucionaria o **sintoma** ao custo de destruir o
+**desenho**. É a mesma família do Err01: *fazer o erro sumir* sem
+perguntar *o que o erro está dizendo*.
+
+### A2 — `curl` sem `ca-certificates`: primeiro sintoma ✅
+
+**Primeiro sintoma:** falha em qualquer acesso **HTTPS**:
+
+```
+curl: (60) SSL certificate problem: unable to get local issuer certificate
+```
+
+**Por que o erro aponta para o lugar errado:** a mensagem fala em
+*"SSL certificate problem"* — parece um problema do **certificado do
+site** (servidor, remoto, alheio). A causa real é a **ausência do cofre
+local** de CAs (`ca-certificates`), que fica **na sua máquina**, é
+**seu**, e é **pré-requisito**. O `curl` acusa o certificado alheio
+porque **não consegue validar a cadeia** — ele não sabe se o certificado
+é bom ou se **falta a confiança** para julgar. É o mesmo erro de
+endereçamento do `localhost`: **a pergunta sai do lugar errado**.
+
+> **Lição:** erro de **validação** raramente aponta para **quem
+> validou**. Ante a dúvida: o que **falta aqui**?
+
+### A3 — Duas fontes em 500, quero a 20 ✅
+
+**Duas formas de obter a versão desejada, sem mexer no repositório:**
+
+1. **Versão explícita no install:**
+
+   ```bash
+   sudo apt-get install nodejs=20.19.2+dfsg-1+deb13u3
+   ```
+
+   Você **diz qual versão quer**, ignorando o desempate por prioridade.
+   O `apt` usa essa versão exata se ela estiver na *version table*.
+
+2. **`apt-mark hold` (segurar a atual):**
+
+   ```bash
+   sudo apt-mark hold nodejs
+   ```
+
+   Impede que o `apt` **atualize** o pacote já instalado (20) em
+   qualquer `upgrade` — mantém a 20 **sem** rebaixar o repositório.
+
+   *(Alternativa equivalente: `apt-get install -t trixie-security nodejs`
+   — pede a versão daquela fonte específica.)*
+
+**Por que nenhuma mexe no repositório:** as duas operam no **pacote**,
+não na **fonte** — a regra de prioridade continua intacta; você apenas
+sobrepõe a escolha na hora da instalação.
+
+### A4 — `live-restore: false` × container sem volume ✅
+
+**Complete:**
+
+> *"Se eu reiniciar o **daemon** do Docker com `live-restore: false`,
+> **todos os containers caem** — o daemon para e não os restaura.
+> Se eu recriar o **container** sem `volume`, **o dado de dentro dele se
+> perde** — o container é efêmero."*
+
+**Qual dos dois é recuperação de dado?** O **segundo**. Cavar a distinção:
+
+| | O que se perde | Recuperação |
+|---|---|---|
+| `live-restore: false` + restart do daemon | **Processos** (containers param) | `docker start` / `up` de novo — o **volume sobrevive** |
+| Container recriado **sem volume** | **Dado** (o conteúdo do container é descartado) | Só **backup externo** — o volume é que protege, e sem ele não há o que restaurar |
+
+`live-restore` protege **processo**; volume protege **dado**. Quem
+precisa de *recuperação de dado* é o caso em que **não existe cópia** —
+por isso o `postgres_data` é volume nomeado, e por isso a Q21 aponta o
+dump como pendência.
+
+### A5 — Pod `Running` mas o site não abre: três perguntas ✅
+
+**Nesta ordem:**
+
+1. **"Qual contexto/cluster estou falando?"**
+   (`kubectl config current-context`) — **a mais importante**, porque
+   **invalida todas as outras**: com contexto errado, tudo o que se
+   ler é de **outra máquina**, e o `kubectl` **não avisa**. É o mesmo
+   problema do `localhost` (Q1/A7): **verificar o destino antes do
+   conteúdo**.
+2. **"O serviço aponta para esse pod?"
+   (`kubectl get svc,endpoints`)** — `Running` ≠ **selecionado**. O
+   Service precisa de **label correta** e o `Endpoints` precisa apontar
+   para o IP do pod. Pod vivo sem endpoint = **nada recebe tráfego**.
+3. **"O pod responde na porta certa?"
+   (`kubectl describe svc`, logs do pod, `kubectl get pods -o wide`)**
+   — o processo pode estar `Running` mas escutando em **outra porta**,
+   ou o `containerPort` divergir do `targetPort`, ou a app estar
+   **morrendo no boot do request**.
+
+**Por que a primeira é a mais importante:** é a única que, se falhar,
+torna **inútil** a leitura das outras duas. Ler `endpoints` do cluster
+errado **gera confiança em dado errado** — pior do que não ler. (Lição
+do Q5: contexto errado = "funcionou, noutro lugar".)
+
+### A6 — `uv sync` resolveu 110 pacotes em 1 ms ✅
+
+**Por que é rápido:** o `uv.lock` já contém **tudo resolvido** — as
+110 versões exatas, as dependências cruzadas e os **hashes** (sha256) de
+cada artefato. O `uv` não *pensa*, ele **consulta a receita e confere o
+que já tem no cache** — 1 ms é tempo de leitura, não de decisão.
+
+**O que o `uv.lock` de 644 KB contém:** o **grafo de dependências
+fechado** — cada pacote com versão, origem e integridade. É ele que
+torna a instalação **determinística**: mesma entrada, mesma saída.
+
+**Se ele não existisse:** o `uv sync` teria que **resolver o grafo na
+hora** — escolher versões compatíveis entre si (segundos, não milissegundos),
+aceitar **qualquer versão que satisfaça** (instalação **não
+reprodutível**: outra máquina, outra data, outro resultado), e sem
+hashes, **sem prova de integridade**. O `uv.lock` é a razão de
+apagar 272 MB / 10.282 arquivos e reerguer o ambiente **idêntico**.
+
+### A7 — `localhost` × contexto errado: o mesmo problema ✅
+
+**São o mesmo problema:** **endereçamento sem sinal de aviso** — você
+conversa com o **lado errado** e o sistema **não avisa**.
+
+| | Você acha que fala com... | Na verdade fala com... | Sinal? |
+|---|---|---|---|
+| `localhost:8000` no Windows | a app (`pve-lab`) | **o próprio Windows** | nenhum — conexão recusa e some |
+| contexto errado no `kubectl` | cluster `aiops` | **outro cluster** | nenhum — comando "funciona" |
+
+Os dois: **o destino é relativo a quem pergunta** (glossário, Bloco 1) —
+`localhost` é a própria máquina; contexto é o ponteiro ativo do
+`kubectl`. Nos dois, a falha **não grita**: um dá conexão recusada, o
+outro **aplica em silêncio no lugar errado**. E nos dois, a correção é
+**perguntar o destino antes** (`kubectl config current-context`, IP em
+vez de `localhost`).
+
+**Verbete do glossário que cobre os dois:** **contexto** — *o conjunto
+de "onde estou, para quem falo, com qual credencial" que precede
+qualquer ação*. (Coberto juntamente com *endereçamento de rede*, Bloco
+1 — os dois verbetes descrevem a mesma pergunta prévia.)
+
+> **A7 é a pergunta de entrevista:** quem acerta, entendeu a
+> **estrutura** — *"sempre valide o destino"* — e não o vocabulário.
+
+**Estado da autoavaliação:** A1–A7 respondidas · feedback da aula
+indicava: erro em A1/A4/A5 → refazer Tópicos 1, 4, 5; erro em A2/A3/A6
+→ Tópicos 2, 3, 6. **Todas respondidas com base nos fatos do M0** —
+verificação por evidência, não por memória.
+
 ### Recado final do simulado
 
 As perguntas que falharam falharam por **não serem respondidas**, não por
@@ -1790,8 +2407,12 @@ registra-se **o que se concluiu**, com veredito, não o que está em curso.
 
 ---
 
-*Última atualização: 2026-10-22 — **M0 concluído (14/14)** · **Passo 6 —
-repositório `landeletronic/devops-profissional` publicado** · **Simulado M0
-aplicado e corrigido** (acertos parciais em Q2/Q3/Q6; erros conceituais
-registrados em Q4 `live-restore` e Q5 cluster×contexto; erros de escopo em Q1).
-Nenhuma credencial publicada (auditoria 9/9).*
+*Última atualização: 2026-11-01 — **M0 concluído (14/14)** · **Simulado M0
+completo: 21/21 respondidas e corrigidas** (Bloco 2 Q7–Q12, Bloco 3 Q13–Q18,
+Bloco 4 Q19–Q21) · **Autoavaliação A1–A7 respondida** · **Consolidação da
+estrutura do repositório** (docs/, lab/, scripts/, notas/ — espelhada no
+`pve-lab`) · **OpenSpec formalizado** (`docs/openspec/`, change
+`2026-11-01-consolidacao-estrutura-repositorio`) · **Documentação DevOps**
+(ARQUITETURA, RUNBOOK, PLAYBOOK, CHECKLIST, DECISOES) · Lab restaurado com
+8 GB de RAM, 174 relatórios preservados, app `:8000` → 200 e MCP `:3001` →
+405 a partir do Windows. Nenhuma credencial publicada.*
