@@ -107,7 +107,7 @@ queda gera falso alarme.
 | # | O que verificar | Comando | Resultado esperado |
 |---|---|---|---|
 | 5.1 | Banco acessível | `ssh pve-lab "docker compose -f .../docker-compose.yml exec -T postgres psql -U aiops -d aiops_k8s -c 'select 1;'"` | `1` (exit 0) |
-| 5.2 | Tabela `reports` com dados | `ssh pve-lab "docker compose -f .../docker-compose.yml exec -T postgres psql -U aiops -d aiops_k8s -tAc 'select count(*) from reports;'"` | número **> 0** (sessão observada: ~175) |
+| 5.2 | Tabela `reports` com dados | `ssh pve-lab "docker compose -f .../docker-compose.yml exec -T postgres psql -U aiops -d aiops_k8s -tAc 'select count(*) from reports;'"` | número **> 174** (baseline: 174 originais + relatórios novos gerados pela app — o total **cresce** por design; sessão observada: 174 → 175 → 176) |
 | 5.3 | Migration na head | `ssh pve-lab "docker compose -f .../docker-compose.yml exec -T postgres psql -U aiops -d aiops_k8s -tAc 'select version_num from alembic_version;'"` | `a3c1f0e2b9d4` |
 
 ## 6. Aplicação Python (`uv`, `.venv` e migrations)
@@ -165,7 +165,7 @@ AUDITORIA — 2026-11-01 — pve-lab 192.168.15.10
 [ x ] 3.1 teste-a .............. observed: ImagePullBackOff    (falha plantada OK)
 [ x ] 4.1 App health ........... observed: HTTP 200
 [ x ] 4.3 MCP /mcp ............. observed: HTTP 405            (esperado: exige POST)
-[ x ] 5.2 Relatórios ........... observed: count = 175
+[ x ] 5.2 Relatórios ........... observed: count = 176 (baseline 174 + gerados pela app; cresce por design)
 [ N/A ] API paga ............... motivo: laboratório 100% gratuito (R1)
 [   ] 7.2 Local == remoto ...... PENDENTE — verificar no Windows
 

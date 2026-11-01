@@ -47,8 +47,8 @@ code, HTTP code, hash ou contagem. Nenhum item é inferido.
 | App via IP da VM | Aprovado | `192.168.15.10:8000/api/health` → **HTTP 200** |
 | Acesso do Windows | Aprovado | `Invoke-WebRequest` → `HTTP 200`, corpo `{"status":"ok"}` |
 | Migrations | Aprovado | `alembic current` → `a3c1f0e2b9d4 (head)` |
-| Dados preservados | Aprovado | 174 relatórios originais (`2026-10-22`→`2026-10-26`) + 1 gerado na subida (`2026-11-01 22:19:10`) = 175 |
-| Cenários de falha | Aprovado | `teste-a`: `ImagePullBackOff`; `teste-b`: 10 pods `Error` — **intencionais** (D8) |
+| Dados preservados | Aprovado | 174 relatórios originais (`2026-10-22`→`2026-10-26`) + 1 gerado na subida (`2026-11-01 22:19:10`) = 175. *Auditoria 23:00: **176** — mais um relatório gerado às 22:49 enquanto a app analisava os cenários. O número **cresce** por design; a baseline de integridade é `>= 175`.* |
+| Cenários de falha | Aprovado | `teste-a`: `ImagePullBackOff`; `teste-b`: 10 pods `Error` (22:19) → `CrashLoopBackOff` após ~1,5 mil restarts cada (auditoria 23:00) — evolução normal do mesmo cenário, **intencional** (D8) |
 | `up` com exit code | Aprovado | `exit do up: 0` |
 
 ## 5. Commit e sincronização

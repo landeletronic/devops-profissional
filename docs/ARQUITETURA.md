@@ -57,7 +57,7 @@ poderia quebrar o próprio ambiente de trabalho. Com a separação:
  │                             │        │  │  │  ns teste-a → nginx "ngin:latest"│ │  │
  │                             │        │  │  │        → ImagePullBackOff (ok!)  │ │  │
  │                             │        │  │  │  ns teste-b → kube-news (senha   │ │  │
- │                             │        │  │  │        errada) → Error (ok!)     │ │  │
+ │                             │        │  │  │        errada) → CrashLoopBackOff     │ │  │
  │                             │        │  │  └──────────────────────────────────┘ │  │
  │                             │        │  │  ┌──────────────┐ ┌─────────────────┐ │  │
  │                             │        │  │  │ app FastAPI  │ │ MCP Server      │ │  │
@@ -69,7 +69,7 @@ poderia quebrar o próprio ambiente de trabalho. Com a separação:
  │                             │        │  │ PostgreSQL 17 + pgAdmin               │  │
  │                             │        │  │ container ...-postgres-1              │  │
  │                             │        │  │ db aiops_k8s · user aiops             │  │
- │                             │        │  │ tabela reports (~175 linhas)          │  │
+ │                             │        │  │ tabela reports (~176 linhas)          │  │
  │                             │        │  │ pgAdmin exposto em :5050              │  │
  │                             │        │  └───────────────────────────────────────┘  │
  └─────────────────────────────┘        └──────────────────────────────────────────────┘
